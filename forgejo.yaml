@@ -14,10 +14,13 @@ spec:
   valuesContent: |-
     ingress:
       enabled: true
+      hosts:
+        - host: raspberrypi.local
+          paths:
+            - path: /
+              pathType: Prefix
     gitea:
       admin:
         password: FIXME
       metrics:
         enabled: true
-        #serviceMonitor:
-        #  enabled: true
