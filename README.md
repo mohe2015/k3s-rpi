@@ -18,5 +18,7 @@ wget https://golang.org/dl/go1.21.1.linux-arm64.tar.gz
 sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.1.linux-arm64.tar.gz
 sudo nano /etc/profile
 export PATH=$PATH:/usr/local/go/bin
-go install github.com/hetznercloud/cli/cmd/hcloud@latest
+
+https://github.com/AnalogJ/lexicon
+https://go-acme.github.io/lego/dns/hetzner/
 ```
