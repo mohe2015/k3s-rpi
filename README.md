@@ -42,6 +42,7 @@ kubectl create secret tls pi.selfmade4u.de --namespace kube-system --cert .lego/
 # https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
 # https://istio.io/latest/docs/tasks/traffic-management/ingress/
 # https://istio.io/latest/docs/setup/getting-started/
+# https://istio.io/latest/docs/setup/additional-setup/getting-started/
 sudo nano /var/lib/rancher/k3s/server/manifests/traefik.yaml
 ```
  
