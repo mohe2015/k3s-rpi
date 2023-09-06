@@ -7,7 +7,7 @@ sudo apt upgrade -y
 echo "cgroup_memory=1 cgroup_enable=memory" | sudo tee -a /boot/cmdline.txt
 cat /boot/cmdline.txt
 sudo reboot
-curl -sfL https://get.k3s.io | sh -s - --flannel-backend none --disable-network-policy --disable=traefik --snapshotter=stargz
+curl -sfL https://get.k3s.io | sh -s - --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz
 export KUBECONFIG=~/.kube/config
 mkdir ~/.kube 2> /dev/null
 sudo k3s kubectl config view --raw > "$KUBECONFIG"
