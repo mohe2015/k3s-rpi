@@ -28,6 +28,7 @@ python3 -m venv env
 source env/bin/activate
 pip install dns-lexicon[hetzner]
 LEXICON_HETZNER_TOKEN=X lexicon hetzner list selfmade4u.de A
+lexicon hetzner create selfmade4u.de A --name="*.pi.selfmade4u.de" --content="192.168.2.73"
 deactivate
 
 go install github.com/go-acme/lego/v4/cmd/lego@master
