@@ -29,11 +29,18 @@ source env/bin/activate
 pip install dns-lexicon[hetzner]
 LEXICON_HETZNER_TOKEN=X lexicon hetzner list selfmade4u.de A
 lexicon hetzner create selfmade4u.de A --name="*.pi.selfmade4u.de" --content="192.168.2.73"
-
 https://forgejo.pi.selfmade4u.de/
 deactivate
 
 go install github.com/go-acme/lego/v4/cmd/lego@master
 HETZNER_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx ~/go/bin/lego --email Moritz.Hedtke@t-online.de --dns hetzner --domains *.pi.selfmade4u.de run
+
+kubectl create secret tls pi.selfmade4u.de --namespace kube-system --cert .lego/certificates/_.pi.selfmade4u.de.crt --key .lego/certificates/_.pi.selfmade4u.de.key
+
+# install istio
+# https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
+# https://istio.io/latest/docs/tasks/traffic-management/ingress/
+# https://istio.io/latest/docs/setup/getting-started/
+sudo nano /var/lib/rancher/k3s/server/manifests/traefik.yaml
 ```
  
