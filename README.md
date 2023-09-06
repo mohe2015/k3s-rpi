@@ -24,5 +24,5 @@ export PATH=$PATH:/usr/local/go/bin
 # https://go-acme.github.io/lego/dns/hetzner/
 
 go install github.com/go-acme/lego/v4/cmd/lego@master
-HETZNER_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx lego --email Moritz.Hedtke@t-online.de --dns hetzner --domains *.pi.selfmade4u.de run
+HETZNER_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx ~/go/bin/lego --email Moritz.Hedtke@t-online.de --dns hetzner --domains *.pi.selfmade4u.de run
 ```
