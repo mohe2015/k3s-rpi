@@ -19,6 +19,10 @@ sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.1.linux-arm64.ta
 sudo nano /etc/profile
 export PATH=$PATH:/usr/local/go/bin
 
-https://github.com/AnalogJ/lexicon
-https://go-acme.github.io/lego/dns/hetzner/
+# https://github.com/octodns/octodns
+# https://github.com/AnalogJ/lexicon
+# https://go-acme.github.io/lego/dns/hetzner/
+
+go install github.com/go-acme/lego/v4/cmd/lego@master
+HETZNER_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx lego --email Moritz.Hedtke@t-online.de --dns hetzner --domains *.pi.selfmade4u.de run
 ```
