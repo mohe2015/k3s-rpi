@@ -28,6 +28,8 @@ cilium install --version 1.14.1
 cilium status --wait
 cilium connectivity test
 
+# only use https://docs.cilium.io/en/latest/network/servicemesh/gateway-api/gateway-api/ ?
+
 
 # install istio
 # https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
