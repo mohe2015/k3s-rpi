@@ -13,6 +13,32 @@ mkdir ~/.kube 2> /dev/null
 sudo k3s kubectl config view --raw > "$KUBECONFIG"
 chmod 600 "$KUBECONFIG"
 echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
+kubectl get -A pods
+
+# install istio
+# https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
+# https://istio.io/latest/docs/tasks/traffic-management/ingress/
+# https://istio.io/latest/docs/setup/additional-setup/getting-started/
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v0.8.0/experimental-install.yaml
+curl -L https://istio.io/downloadIstio | sh -
+export PATH="$PATH:/home/moritz/istio-1.19.0/bin"
+istioctl x precheck 
+cd istio-1.19.0/
+istioctl install -f samples/bookinfo/demo-profile-no-gateways.yaml -y
+kubectl label namespace default istio-injection=enabled
+kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+kubectl get services
+kubectl get pods
+kubectl exec "$(kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}')" -c ratings -- curl -sS productpage:9080/productpage | grep -o "<title>.*</title>"
+kubectl apply -f samples/bookinfo/gateway-api/bookinfo-gateway.yaml
+kubectl wait --for=condition=programmed gtw bookinfo-gateway
+istioctl analyze
+
+
+
+
+sudo nano /var/lib/rancher/k3s/server/manifests/istio.yaml
+
 sudo nano /var/lib/rancher/k3s/server/manifests/forgejo.yaml
 sudo apt install -y git
 wget https://golang.org/dl/go1.21.1.linux-arm64.tar.gz
@@ -37,12 +63,5 @@ go install github.com/go-acme/lego/v4/cmd/lego@master
 HETZNER_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx ~/go/bin/lego --email Moritz.Hedtke@t-online.de --dns hetzner --domains *.pi.selfmade4u.de run
 
 kubectl create secret tls pi.selfmade4u.de --namespace kube-system --cert .lego/certificates/_.pi.selfmade4u.de.crt --key .lego/certificates/_.pi.selfmade4u.de.key
-
-# install istio
-# https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
-# https://istio.io/latest/docs/tasks/traffic-management/ingress/
-# https://istio.io/latest/docs/setup/getting-started/
-# https://istio.io/latest/docs/setup/additional-setup/getting-started/
-sudo nano /var/lib/rancher/k3s/server/manifests/traefik.yaml
 ```
  
