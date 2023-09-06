@@ -25,8 +25,10 @@ export PATH=$PATH:/usr/local/go/bin
 
 sudo apt install python3-pip python3-venv
 python3 -m venv env
-https://github.com/AnalogJ/lexicon
-
+source env/bin/activate
+pip install dns-lexicon[hetzner]
+LEXICON_HETZNER_TOKEN=X lexicon hetzner list selfmade4u.de A
+deactivate
 
 go install github.com/go-acme/lego/v4/cmd/lego@master
 HETZNER_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx ~/go/bin/lego --email Moritz.Hedtke@t-online.de --dns hetzner --domains *.pi.selfmade4u.de run
