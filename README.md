@@ -37,6 +37,8 @@ sudo rm /etc/cni/net.d/05-cilium.conflist
 
 ## Install
 
+nix shell nixpkgs#kubectl nixpkgs#kubernetes-helm
+
 ```bash
 ssh moritz@raspberrypi.local
 
@@ -47,16 +49,27 @@ sudo apt upgrade -y
 #sudo apt install ufw
 #sudo ufw disable
 
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+
 echo "cgroup_memory=1 cgroup_enable=memory" | sudo tee -a /boot/cmdline.txt
 cat /boot/cmdline.txt
 sudo reboot
-curl -sfL https://get.k3s.io | sh -s - server --cluster-init --cluster-cidr=10.42.0.0/16,2001:cafe:42:0::/56 --service-cidr=10.43.0.0/16,2001:cafe:42:1::/112 --prefer-bundled-bin --disable-helm-controller --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz --node-taint=node.cilium.io/agent-not-ready:NoSchedule
+# TODO explicitly set node ips, ipv6 and ipv6 and use them later down in the document for e.g. cilium
+curl -sfL https://get.k3s.io | sh -s - server --cluster-init --cluster-cidr=10.42.0.0/16,2001:cafe:42:0::/56 --service-cidr=10.43.0.0/16,2001:cafe:42:1::/112 --prefer-bundled-bin --disable-helm-controller --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz  --node-taint=node.cilium.io/agent-not-ready:NoSchedule
+# this will no start with a node taint as there is no network cni plugin
+
 export KUBECONFIG=~/.kube/config
 mkdir ~/.kube 2> /dev/null
 sudo k3s kubectl config view --raw > "$KUBECONFIG"
 chmod 600 "$KUBECONFIG"
 echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
 kubectl get -A all
+# also copy this file locally to access cluster remotely
+
+# https://docs.cilium.io/en/v1.12/gettingstarted/kind/#unable-to-contact-k8s-api-server
+kubectl get nodes -o wide # should show InternalIP
 
 # https://github.com/kubernetes-sigs/gateway-api/pull/2426/files
 # https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/
@@ -71,13 +84,19 @@ rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
 
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v0.8.1/experimental-install.yaml
 
-cilium install --version 1.15.0-pre.1 \
-    --set kubeProxyReplacement=true \
-    --set gatewayAPI.enabled=true \
-    --set=ipam.operator.clusterPoolIPv4PodCIDRList="10.42.0.0/16"
+helm repo add cilium https://helm.cilium.io/
+
+# https://docs.cilium.io/en/latest/network/kubernetes/kubeproxy-free/#kubeproxy-free
+# https://medium.com/@charled.breteche/kind-cluster-with-cilium-and-no-kube-proxy-c6f4d84b5a9d
+
+# CHECK IP
+# gateway api doesnt work with a node taint so first install without it
+helm upgrade --install cilium cilium/cilium --version 1.15.0-pre.1 --namespace kube-system --set k8sServiceHost=192.168.2.73 -f cilium.yaml
+
+# helm -n kube-system get values cilium
+
 cilium status --wait
 cilium connectivity test
-
 
 
 
