@@ -36,6 +36,10 @@ ssh moritz@raspberrypi.local
 # TODO rootless k3s, swap
 sudo apt update
 sudo apt upgrade -y
+
+sudo apt install ufw
+sudo ufw disable
+
 echo "cgroup_memory=1 cgroup_enable=memory" | sudo tee -a /boot/cmdline.txt
 cat /boot/cmdline.txt
 sudo reboot
@@ -45,7 +49,7 @@ mkdir ~/.kube 2> /dev/null
 sudo k3s kubectl config view --raw > "$KUBECONFIG"
 chmod 600 "$KUBECONFIG"
 echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
-kubectl get -A pods
+kubectl get -A all
 
 # https://github.com/kubernetes-sigs/gateway-api/pull/2426/files
 # https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/
@@ -62,7 +66,8 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 
 cilium install --version 1.15.0-pre.1 \
     --set kubeProxyReplacement=true \
-    --set gatewayAPI.enabled=true
+    --set gatewayAPI.enabled=true \
+    --set=ipam.operator.clusterPoolIPv4PodCIDRList="10.42.0.0/16"
 cilium status --wait
 cilium connectivity test
 
