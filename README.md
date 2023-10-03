@@ -114,8 +114,6 @@ flux bootstrap github \
   --private=false
 
 
-# only use https://docs.cilium.io/en/latest/network/servicemesh/gateway-api/gateway-api/ ?
-
 
 
 sudo nano /var/lib/rancher/k3s/server/manifests/forgejo.yaml
