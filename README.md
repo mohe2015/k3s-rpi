@@ -1,13 +1,15 @@
 # k3s-rpi
 
 ```bash
-# TODO rootless k3s
+# TODO rootless k3s, swap
 sudo apt update
 sudo apt upgrade -y
 echo "cgroup_memory=1 cgroup_enable=memory" | sudo tee -a /boot/cmdline.txt
 cat /boot/cmdline.txt
 sudo reboot
-curl -sfL https://get.k3s.io | sh -s - --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz
+curl -sfL https://get.k3s.io | sh -s - server --cluster-init --kubelet-arg="node-ip=::" --cluster-cidr=2001:cafe:42:0::/56 --service-cidr=2001:cafe:42:1::/112 --rootless --prefer-bundled-bin --disable-cloud-controller --disable-helm-controller --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz
+KUBECONFIG=~/.kube/k3s.yaml kubectl get pods -A
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 export KUBECONFIG=~/.kube/config
 mkdir ~/.kube 2> /dev/null
 sudo k3s kubectl config view --raw > "$KUBECONFIG"
