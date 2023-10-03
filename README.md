@@ -18,14 +18,21 @@ sha256sum --check cilium-linux-${CLI_ARCH}.tar.gz.sha256sum
 sudo tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
 rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
 
+#helm repo add cilium https://helm.cilium.io/
+#helm install cilium cilium/cilium --version 1.15.0-pre.1 \
+#  --namespace kube-system \
+#  --set agent.sleepAfterInit=true --set global.cleanState=true --set global.cleanBpfState=true
+
 sudo ip link delete cilium_host
 sudo ip link delete cilium_net
 sudo ip link delete cilium_vxlan
 sudo iptables-save | grep -iv cilium | sudo iptables-restore
 sudo ip6tables-save | grep -iv cilium | sudo ip6tables-restore
 
-cilium uninstall
+cilium uninstall --wait
 /usr/local/bin/k3s-uninstall.sh
+
+sudo rm /etc/cni/net.d/05-cilium.conflist
 ```
 
 ## Install
@@ -37,13 +44,13 @@ ssh moritz@raspberrypi.local
 sudo apt update
 sudo apt upgrade -y
 
-sudo apt install ufw
-sudo ufw disable
+#sudo apt install ufw
+#sudo ufw disable
 
 echo "cgroup_memory=1 cgroup_enable=memory" | sudo tee -a /boot/cmdline.txt
 cat /boot/cmdline.txt
 sudo reboot
-curl -sfL https://get.k3s.io | sh -s - server --cluster-init --cluster-cidr=10.42.0.0/16,2001:cafe:42:0::/56 --service-cidr=10.43.0.0/16,2001:cafe:42:1::/112 --prefer-bundled-bin --disable-helm-controller --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz
+curl -sfL https://get.k3s.io | sh -s - server --cluster-init --cluster-cidr=10.42.0.0/16,2001:cafe:42:0::/56 --service-cidr=10.43.0.0/16,2001:cafe:42:1::/112 --prefer-bundled-bin --disable-helm-controller --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz --node-taint=node.cilium.io/agent-not-ready:NoSchedule
 export KUBECONFIG=~/.kube/config
 mkdir ~/.kube 2> /dev/null
 sudo k3s kubectl config view --raw > "$KUBECONFIG"
