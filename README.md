@@ -2,30 +2,14 @@
 
 https://radar.cncf.io/
 https://www.cncf.io/projects/
+https://gateway-api.sigs.k8s.io/implementations/
 https://jsonnet.org/articles/kubernetes.html
 
 https://docs.gitlab.com/ee/user/clusters/agent/gitops/flux_tutorial.html
 
+## Uninstall
+
 ```bash
-# TODO rootless k3s, swap
-sudo apt update
-sudo apt upgrade -y
-echo "cgroup_memory=1 cgroup_enable=memory" | sudo tee -a /boot/cmdline.txt
-cat /boot/cmdline.txt
-sudo reboot
-curl -sfL https://get.k3s.io | sh -s - server --cluster-init --kubelet-arg="node-ip=::" --cluster-cidr=10.42.0.0/16,2001:cafe:42:0::/56 --service-cidr=10.43.0.0/16,2001:cafe:42:1::/112 --prefer-bundled-bin --disable-cloud-controller --disable-helm-controller --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz
-KUBECONFIG=~/.kube/k3s.yaml kubectl get pods -A
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-export KUBECONFIG=~/.kube/config
-mkdir ~/.kube 2> /dev/null
-sudo k3s kubectl config view --raw > "$KUBECONFIG"
-chmod 600 "$KUBECONFIG"
-echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
-kubectl get -A pods
-
-curl -s https://fluxcd.io/install.sh | sudo bash
-
-https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/#k8s-install-quick
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
 CLI_ARCH=amd64
 if [ "$(uname -m)" = "aarch64" ]; then CLI_ARCH=arm64; fi
@@ -34,36 +18,74 @@ sha256sum --check cilium-linux-${CLI_ARCH}.tar.gz.sha256sum
 sudo tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
 rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
 
-cilium install --version 1.14.1
+sudo ip link delete cilium_host
+sudo ip link delete cilium_net
+sudo ip link delete cilium_vxlan
+sudo iptables-save | grep -iv cilium | sudo iptables-restore
+sudo ip6tables-save | grep -iv cilium | sudo ip6tables-restore
+
+cilium uninstall
+/usr/local/bin/k3s-uninstall.sh
+```
+
+## Install
+
+```bash
+ssh moritz@raspberrypi.local
+
+# TODO rootless k3s, swap
+sudo apt update
+sudo apt upgrade -y
+echo "cgroup_memory=1 cgroup_enable=memory" | sudo tee -a /boot/cmdline.txt
+cat /boot/cmdline.txt
+sudo reboot
+curl -sfL https://get.k3s.io | sh -s - server --cluster-init --cluster-cidr=10.42.0.0/16,2001:cafe:42:0::/56 --service-cidr=10.43.0.0/16,2001:cafe:42:1::/112 --prefer-bundled-bin --disable-helm-controller --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz
+export KUBECONFIG=~/.kube/config
+mkdir ~/.kube 2> /dev/null
+sudo k3s kubectl config view --raw > "$KUBECONFIG"
+chmod 600 "$KUBECONFIG"
+echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
+kubectl get -A pods
+
+# https://github.com/kubernetes-sigs/gateway-api/pull/2426/files
+# https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/
+# https://docs.cilium.io/en/latest/network/servicemesh/gateway-api/gateway-api/#gs-gateway-api
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+CLI_ARCH=amd64
+if [ "$(uname -m)" = "aarch64" ]; then CLI_ARCH=arm64; fi
+curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
+sha256sum --check cilium-linux-${CLI_ARCH}.tar.gz.sha256sum
+sudo tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
+rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
+
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v0.8.1/experimental-install.yaml
+
+cilium install --version 1.15.0-pre.1 \
+    --set kubeProxyReplacement=true \
+    --set gatewayAPI.enabled=true
 cilium status --wait
 cilium connectivity test
+
+
+
+
+curl -s https://fluxcd.io/install.sh | sudo bash
+. <(flux completion bash)
+
+# fine-grained personal access token with repository access and write access to code
+flux bootstrap github \
+  --token-auth \
+  --owner=mohe2015 \
+  --repository=k3s-rpi \
+  --branch=main \
+  --path=clusters/rpi \
+  --personal \
+  --private=false
+
 
 # only use https://docs.cilium.io/en/latest/network/servicemesh/gateway-api/gateway-api/ ?
 
 
-# install istio
-# https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/
-# https://istio.io/latest/docs/tasks/traffic-management/ingress/
-# https://istio.io/latest/docs/setup/additional-setup/getting-started/
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v0.8.0/experimental-install.yaml
-curl -L https://istio.io/downloadIstio | sh -
-export PATH="$PATH:/home/moritz/istio-1.19.0/bin"
-istioctl x precheck 
-cd istio-1.19.0/
-istioctl install -f samples/bookinfo/demo-profile-no-gateways.yaml -y
-kubectl label namespace default istio-injection=enabled
-kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
-kubectl get services
-kubectl get pods
-kubectl exec "$(kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}')" -c ratings -- curl -sS productpage:9080/productpage | grep -o "<title>.*</title>"
-kubectl apply -f samples/bookinfo/gateway-api/bookinfo-gateway.yaml
-kubectl wait --for=condition=programmed gtw bookinfo-gateway
-istioctl analyze
-
-
-
-
-sudo nano /var/lib/rancher/k3s/server/manifests/istio.yaml
 
 sudo nano /var/lib/rancher/k3s/server/manifests/forgejo.yaml
 sudo apt install -y git
