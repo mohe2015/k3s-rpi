@@ -2,6 +2,9 @@
 
 https://radar.cncf.io/
 https://www.cncf.io/projects/
+https://jsonnet.org/articles/kubernetes.html
+
+https://docs.gitlab.com/ee/user/clusters/agent/gitops/flux_tutorial.html
 
 ```bash
 # TODO rootless k3s, swap
@@ -10,7 +13,7 @@ sudo apt upgrade -y
 echo "cgroup_memory=1 cgroup_enable=memory" | sudo tee -a /boot/cmdline.txt
 cat /boot/cmdline.txt
 sudo reboot
-curl -sfL https://get.k3s.io | sh -s - server --cluster-init --kubelet-arg="node-ip=::" --cluster-cidr=2001:cafe:42:0::/56 --service-cidr=2001:cafe:42:1::/112 --rootless --prefer-bundled-bin --disable-cloud-controller --disable-helm-controller --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz
+curl -sfL https://get.k3s.io | sh -s - server --cluster-init --kubelet-arg="node-ip=::" --cluster-cidr=10.42.0.0/16,2001:cafe:42:0::/56 --service-cidr=10.43.0.0/16,2001:cafe:42:1::/112 --prefer-bundled-bin --disable-cloud-controller --disable-helm-controller --flannel-backend none --disable-network-policy --disable-kube-proxy --disable=traefik --snapshotter=stargz
 KUBECONFIG=~/.kube/k3s.yaml kubectl get pods -A
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 export KUBECONFIG=~/.kube/config
@@ -19,6 +22,8 @@ sudo k3s kubectl config view --raw > "$KUBECONFIG"
 chmod 600 "$KUBECONFIG"
 echo "export KUBECONFIG=~/.kube/config" >> ~/.bashrc
 kubectl get -A pods
+
+curl -s https://fluxcd.io/install.sh | sudo bash
 
 https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/#k8s-install-quick
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
