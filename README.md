@@ -1,5 +1,8 @@
 # k3s-rpi
 
+https://radar.cncf.io/
+https://www.cncf.io/projects/
+
 ```bash
 # TODO rootless k3s, swap
 sudo apt update
